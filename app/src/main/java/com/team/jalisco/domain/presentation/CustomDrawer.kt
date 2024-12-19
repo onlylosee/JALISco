@@ -35,8 +35,8 @@ import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.team.jalisco.R
-import com.team.jalisco.activities.contents.UserProfile
 import com.team.jalisco.domain.model.NavigationItem
+import com.team.jalisco.domain.util.UserProfile
 import com.team.jalisco.domain.util.supabaseCreate
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth

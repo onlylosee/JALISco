@@ -72,7 +72,10 @@ import com.team.jalisco.domain.CustomMenuIcon
 import com.team.jalisco.domain.CustomTextField
 import com.team.jalisco.domain.model.CustomDrawerState
 import com.team.jalisco.domain.model.opposite
+import com.team.jalisco.domain.util.loadDataFromSupabase
 import com.team.jalisco.domain.util.supabaseCreate
+import com.team.jalisco.domain.util.uploadDataToSupabase
+import com.team.jalisco.domain.util.uploadStringToSupabase
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
@@ -86,16 +89,7 @@ import kotlinx.serialization.Serializable
 import java.io.File
 import java.io.InputStream
 
-@Serializable
-data class UserProfile(
-    val user_id: String,
-    val nickname: String?,
-    val name: String?,
-    val bio: String?,
-    val address: String?,
-    val phone: String?,
-    val image: String,
-)
+
 
 
 @SuppressLint("UnusedMaterialScaffoldPaddingParameter", "CoroutineCreationDuringComposition")
@@ -595,150 +589,5 @@ fun startImageCrop(
 
     cropLauncher.launch(cropIntent)
 }
-suspend fun uploadImageToSupabaseStorage(
-    context: Context,
-    imageUri: Uri,
-    userId: String,
-    supabase: SupabaseClient,
-    onSuccess: (String) -> Unit,
-    onError: (String) -> Unit
-) {
-    try {
-        val inputStream: InputStream? = context.contentResolver.openInputStream(imageUri)
-
-        if (inputStream == null) {
-            onError("Не удалось открыть поток для изображения")
-            return
-        }
-
-        val byteArray = inputStream.readBytes()
-        try {
-            supabase.storage.from("avatars").delete("$userId/avatar.jpg")
-        }finally {
-            supabase.storage.from("avatars").upload("$userId/avatar.jpg", byteArray)
-        }
-
-        val publicUrl: String = supabase.storage.from("avatars").publicUrl("$userId/avatar.jpg")
-
-        onSuccess(publicUrl)
-    } catch (e: Exception) {
-        // Обработка ошибок
-        onError("Ошибка загрузки: ${e.localizedMessage}")
-    }
-}
 
 
-suspend fun uploadStringToSupabase(
-    string: String?,
-    tableString: String?,
-    client: SupabaseClient = supabaseCreate(),
-    onSuccess: () -> Unit,
-    onError: (String) -> Unit
-) {
-    try {
-        val user = client.auth.currentSessionOrNull()?.user
-        if (user != null) {
-            Handler(Looper.getMainLooper()).post {
-                CoroutineScope(Dispatchers.IO).launch {
-                    val userId = user.id
-                    val userData = mapOf(
-                        "user_id" to userId, // Ensure user_id is used as the primary key
-                        "$tableString" to string
-                    )
-                    try {
-                        client.postgrest["profile"].upsert(userData)
-                        onSuccess()
-                    } catch (e: Exception) {
-                        e.message?.let { Log.e("err", it) }
-                    }
-                }
-            }
-
-        } else {
-            onError("No authenticated user found.")
-        }
-    } catch (e: Exception) {
-        onError("Failed to upload data: ${e.localizedMessage}")
-    }
-}
-
-suspend fun uploadDataToSupabase(
-    context: Context,
-    imageUri: Uri?,
-    bio: String,
-    name: String,
-    nickname: String,
-    supabase: SupabaseClient,
-    onSuccess: () -> Unit,
-    onError: (String) -> Unit
-) {
-    try {
-        val user = supabase.auth.currentSessionOrNull()?.user
-        if (user != null) {
-            val userId = user.id
-
-            if (imageUri != null) {
-                uploadImageToSupabaseStorage(context, imageUri, userId, supabase, { imageUrl ->
-                    val userData = mapOf(
-                        "user_id" to userId,
-                        "bio" to bio,
-                        "name" to name,
-                        "nickname" to nickname,
-                        "image" to imageUrl.toString()
-                    )
-
-                    try {
-                        CoroutineScope(Dispatchers.IO).launch {
-                            supabase.postgrest["profile"].upsert(userData)
-                            onSuccess()
-                        }
-                    } catch (e: Exception) {
-                        onError("Ошибка при добавлении данных: ${e.message}")
-                    }
-                }, { errorMessage ->
-                    onError("Ошибка при загрузке изображения: $errorMessage")
-                })
-            }
-        } else {
-            onError("Нет авторизованного пользователя.")
-        }
-    } catch (e: Exception) {
-        onError("Ошибка загрузки данных: ${e}")
-    }
-}
-
-
-suspend fun loadDataFromSupabase(
-    client: SupabaseClient = supabaseCreate(),
-    onDataLoaded: (String, String, String, String, String, String) -> Unit
-) {
-    try {
-        val userId = client.auth.currentSessionOrNull()?.user?.id
-        if (userId != null) {
-            val postgrestResponse = client.postgrest["profile"]
-                .select(Columns.ALL) {
-                    filter { eq("user_id", userId) }
-                }
-            val userProfiles: List<UserProfile> = postgrestResponse.decodeList()
-
-            val userProfile = userProfiles.firstOrNull()
-
-            if (userProfile != null) {
-                val nickname = userProfile.nickname ?: ""
-                val name = userProfile.name ?: ""
-                val bio = userProfile.bio ?: ""
-                val imageUrl = userProfile.image
-                val address = userProfile.address ?: ""
-                val phone = userProfile.phone ?: ""
-
-                onDataLoaded(nickname, name, bio, address, phone, imageUrl)
-            } else {
-                Log.e("SupabaseError", "No profile found for user_id $userId")
-            }
-        } else {
-            Log.e("AuthError", "No authenticated user found.")
-        }
-    } catch (e: Exception) {
-        Log.e("SupabaseError", "Error loading data: ${e.message}")
-    }
-}

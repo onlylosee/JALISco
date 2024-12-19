@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.InputTransformation.Companion.keyboardOptions
+import androidx.compose.material.MaterialTheme.colors
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -173,8 +175,8 @@ fun CustomTextField(
     onValueChange: (String) -> Unit,
     labelText: String,
     onIconClick: (String) -> Unit,
-    painterForIcon: Painter,
-    enabledOrNot: Boolean,
+    painterForIcon: Painter?,
+    enabledOrNot: Boolean? = true,
     focus: FocusManager = LocalFocusManager.current,
     outlinedTextFieldColors: TextFieldColors,
     icon: String,
@@ -198,13 +200,15 @@ fun CustomTextField(
             IconButton(
                 onClick = { onIconClick(icon) }
             ) {
-                Icon(
-                    painter = painterForIcon,
-                    contentDescription = null
-                )
+                if (painterForIcon != null) {
+                    Icon(
+                        painter = painterForIcon,
+                        contentDescription = null
+                    )
+                }
             }
         },
-        enabled = enabledOrNot,
+        enabled = enabledOrNot ?: true,
         keyboardOptions = KeyboardOptions.Default.copy(
             imeAction = ImeAction.Done,
             keyboardType = when (icon) {
@@ -226,6 +230,45 @@ fun CustomTextField(
         ),
     )
 }
+
+@Composable
+fun CustomTextFieldForProduct(
+    modifier: Modifier,
+    textValue: String,
+    onValueChange: (String) -> Unit,
+    labelText: String,
+    enabledOrNot: Boolean? = true,
+    focus: FocusManager = LocalFocusManager.current,
+    outlinedTextFieldColors: TextFieldColors,
+    isValid: Boolean?,
+    keyboardType: KeyboardType
+) {
+    OutlinedTextField(
+        modifier = modifier,
+        maxLines = 1,
+        shape = RoundedCornerShape(20.dp),
+        value = textValue,
+        onValueChange = onValueChange,
+        label = { Text(labelText) },
+        enabled = enabledOrNot ?: true,
+        keyboardOptions = KeyboardOptions.Default.copy(
+            imeAction = ImeAction.Done,
+            keyboardType = keyboardType
+        ),
+        keyboardActions = KeyboardActions(
+            onDone = {
+                focus.clearFocus()
+            }
+        ),
+        colors = outlinedTextFieldColors,
+        textStyle = TextStyle(
+            color = if (isValid == null || isValid == true) Color.Black else Color.Gray,
+            fontSize = 18.sp,
+            fontFamily = FontFamily(Font(R.font.flamesans))
+        ),
+    )
+}
+
 
 @Composable
 fun CustomButton(
