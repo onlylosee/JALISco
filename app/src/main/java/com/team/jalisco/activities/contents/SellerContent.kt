@@ -12,9 +12,11 @@ import androidx.compose.material.IconButton
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,7 +48,7 @@ fun SellerContent(
 ) {
     var client: SupabaseClient = supabaseCreate()
     var focus = LocalFocusManager.current
-    var isTrue by remember { mutableStateOf(false) }
+
 
     Scaffold(
         modifier = modifier
@@ -66,31 +68,30 @@ fun SellerContent(
         }
 
     ) {
-        val user = client.auth.currentSessionOrNull()?.user ?: return@Scaffold
-        val userId = user.id
-        Log.d("userId", userId)
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val response = client.postgrest["profile"]
-                    .select(columns = Columns.list("phone")) {
-                        filter { eq("user_id", userId) }
-                        limit(1)
-                    }
+        var isTrue by rememberSaveable { mutableStateOf(false) }
+        LaunchedEffect(key1 = Unit) {
+            val user = client.auth.currentSessionOrNull()?.user
+            if (user != null) {
+                val userId = user.id
+                Log.d("userId", userId)
 
-                val phone = response.data[0].toString() ?: ""
-                isTrue = phone.isNotBlank()
-                Log.d("Phone check", "Phone exists: $isTrue")
-            } catch (e: Exception) {
-                Log.e("SupabaseError", "Error checking phone: ${e.localizedMessage}")
+                try {
+                    val response = client.postgrest["profile"]
+                        .select(columns = Columns.list("phone")) {
+                            filter { eq("user_id", userId) }
+                            limit(1)
+                        }
+
+                    val phone = response.data[0].toString() ?: ""
+                    isTrue = phone.isNotBlank()
+                    Log.d("Phone check", "Phone exists: $isTrue")
+                } catch (e: Exception) {
+                    Log.e("SupabaseError", "Error checking phone: ${e.localizedMessage}")
+                }
             }
         }
         if (isTrue) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(text = "Phone is confirmed and added", fontSize = 20.sp)
-            }
+
         } else {
             Box(
                 contentAlignment = Alignment.Center,
