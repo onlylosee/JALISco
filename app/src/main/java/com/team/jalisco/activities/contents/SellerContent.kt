@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
@@ -71,23 +72,26 @@ fun SellerContent(
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val response = client.postgrest["profile"]
-                    .select(columns = Columns.list("phone")){
+                    .select(columns = Columns.list("phone")) {
                         filter { eq("user_id", userId) }
                         limit(1)
                     }
-                    val phone = response.data[0].toString()
-                    if (phone.isNotBlank() && phone.isDigitsOnly()) {
-                        isTrue = true
-                    } else {
-                        isTrue = false
-                    }
-                println("Phone exists: $isTrue")
+
+                val phone = response.data[0].toString() ?: ""
+                isTrue = phone.isNotBlank()
+                Log.d("Phone check", "Phone exists: $isTrue")
             } catch (e: Exception) {
                 Log.e("SupabaseError", "Error checking phone: ${e.localizedMessage}")
-                isTrue = false
             }
         }
         if (isTrue) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = "Phone is confirmed and added", fontSize = 20.sp)
+            }
+        } else {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier

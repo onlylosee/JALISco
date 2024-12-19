@@ -37,14 +37,8 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMotionApi::class)
 @Composable
 
-        /*
-         * In this composable we are using constraint sets defined in motion_scene.json5 file
-         * and and here we are using Modifier.layoutId() to assign the ids of view that we have defiend in
-         * motion_scene file so that motion layout can identify and position them according to the constraint set
-         *
-         */
 
-fun ProfileHeader(progress: MutableState<Float>) {
+fun ProfileHeader(progress: MutableState<Float>, paddingValues: PaddingValues) {
 
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
@@ -105,7 +99,7 @@ fun ProfileHeader(progress: MutableState<Float>) {
             colors = outlinedTextFieldColors,
             shape = RoundedCornerShape(12.dp),
             modifier= Modifier
-                .padding(start = 12.dp)
+                .padding(paddingValues)
                 .fillMaxWidth()
                 .defaultMinSize(minHeight = TextFieldDefaults.MinHeight)
                 .onFocusChanged {

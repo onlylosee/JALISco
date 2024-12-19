@@ -2,6 +2,7 @@ package com.team.jalisco.activities.contents
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,12 +17,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
-import androidx.compose.material.Scaffold
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -31,6 +34,7 @@ import com.team.jalisco.ProductsCard
 import com.team.jalisco.activities.marketContent.ProfileHeader
 import com.team.jalisco.domain.CustomMenuIcon
 import com.team.jalisco.domain.model.CustomDrawerState
+import com.team.jalisco.domain.model.isOpened
 import com.team.jalisco.domain.model.opposite
 
 @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
@@ -61,7 +65,6 @@ fun MarketContent(
         }
 
     }
-
     Scaffold(
         modifier = modifier
             .clickable(enabled = drawerState == CustomDrawerState.Opened) {
@@ -79,18 +82,19 @@ fun MarketContent(
             }
         }
     ) { padding ->
-        Box(Modifier.fillMaxSize()) {
+        Box(Modifier.fillMaxSize().background(Color.White)) {
             Column(
                 Modifier
                     .padding(padding)
                     .padding(horizontal = 16.dp)
                     .fillMaxSize()
                     .nestedScroll(nestedScrollConnection)
+                    .background(Color.White)
             ) {
                 ProductsGrid(myHomeFeedScrollState)
             }
             Column {
-                ProfileHeader(progress = toolbarProgress)
+                ProfileHeader(progress = toolbarProgress, padding)
             }
         }
     }
